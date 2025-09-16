@@ -52,6 +52,7 @@ export enum StylePreset {
 
 export interface GenerateImageParams {
   productImage: File;
+  productDescription: string;
   aspectRatio: AspectRatio;
   modelGender: ModelGender;
   modelPersona: ModelPersona;

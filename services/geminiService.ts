@@ -18,6 +18,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 const buildPrompt = async (params: GenerateImageParams): Promise<any[]> => {
     const { 
         productImage, 
+        productDescription,
         aspectRatio, 
         modelGender, 
         modelPersona,
@@ -56,16 +57,21 @@ const buildPrompt = async (params: GenerateImageParams): Promise<any[]> => {
     const styleDescription = customStyleConcept || `a clean, professional ${stylePreset} style`;
     
     const textPrompt = `
-      Generate a single, high-resolution, studio-quality photoshoot image for an advertising campaign, with an aspect ratio of ${aspectRatio}.
+      **Task:** Create a professional product advertisement image by compositing the provided product image into a new scene.
 
-      **Image Content:**
-      - **Product:** The product is in the first image provided. Isolate it from its original background.
-      - **Model:** Feature a photorealistic Indian ${modelGender} model with a ${skinTone} skin tone, representing the '${modelPersona}' persona.
-      - **Outfit:** The model should be wearing ${outfitDescription}.
-      - **Pose:** The model should be posed as follows: "${poseSuggestion}", interacting naturally with the product.
-      - **Scene & Style:** The background, lighting, and mood must match a professional '${styleDescription}', suitable for a high-end ad.
+      **Inputs:**
+      - **Product Image:** The first image provided.
+      - **Outfit Reference Image:** The second image provided (if any).
 
-      After generating the image, provide the following text in the specified format:
+      **Instructions:**
+      1.  **Isolate Product:** Take the product from the 'Product Image' and remove its background. Product description: "${productDescription}".
+      2.  **Create Scene:** Generate a new, photorealistic scene featuring an Indian ${modelGender} model with a ${skinTone} skin tone, representing the '${modelPersona}' persona.
+      3.  **Style Model:** The model should wear ${outfitDescription}.
+      4.  **Compose:** Place the isolated product into the new scene. The model should be interacting with the product in the following pose: "${poseSuggestion}".
+      5.  **Final Touches:** The overall image should have a professional '${styleDescription}' aesthetic. The final image aspect ratio must be ${aspectRatio}.
+
+      **Required Text Output:**
+      After generating the composite image, provide the following text in this exact format:
       caption: [A catchy social media caption for the image]
       hashtags: [#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5]
     `;

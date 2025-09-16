@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { GenerateImageParams } from '../types';
 import { AspectRatio, ModelGender, ModelPersona, OutfitChoice, StylePreset, SkinTone, ClothingType } from '../types';
 import { 
@@ -8,6 +8,7 @@ import {
   MODEL_PERSONA_OPTIONS, 
   STYLE_PRESET_OPTIONS, 
   POSE_SUGGESTIONS,
+  CUSTOM_POSE_TRIGGER,
   SKIN_TONE_OPTIONS,
   CLOTHING_TYPE_OPTIONS
 } from '../constants';
@@ -30,6 +31,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [productDescription, setProductDescription] = useState<string>('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>(AspectRatio.Portrait);
   const [modelGender, setModelGender] = useState<ModelGender>(ModelGender.Female);
   const [modelPersona, setModelPersona] = useState<ModelPersona>(ModelPersona.Fashion);
@@ -40,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
   const [outfitReferencePreview, setOutfitReferencePreview] = useState<string | null>(null);
   const [stylePreset, setStylePreset] = useState<StylePreset>(StylePreset.Lifestyle);
   const [poseSuggestion, setPoseSuggestion] = useState<string>(POSE_SUGGESTIONS[0]);
+  const [customPose, setCustomPose] = useState<string>('');
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: React.Dispatch<React.SetStateAction<File | null>>, setPreview: React.Dispatch<React.SetStateAction<string | null>>) => {
     if (e.target.files && e.target.files[0]) {
@@ -54,8 +57,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
       alert("Please upload a product image.");
       return;
     }
+    if (!productDescription.trim()) {
+      alert("Please enter a product description.");
+      return;
+    }
+    
+    const finalPoseSuggestion = poseSuggestion === CUSTOM_POSE_TRIGGER ? customPose : poseSuggestion;
+    if (poseSuggestion === CUSTOM_POSE_TRIGGER && !finalPoseSuggestion.trim()) {
+      alert("Please enter a custom pose description.");
+      return;
+    }
+
     onGenerate({
       productImage,
+      productDescription,
       aspectRatio,
       modelGender,
       modelPersona,
@@ -64,9 +79,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
       outfitChoice,
       outfitReferenceImage: outfitChoice === OutfitChoice.Reference ? outfitReferenceImage : undefined,
       stylePreset,
-      poseSuggestion
+      poseSuggestion: finalPoseSuggestion,
     });
-  }, [productImage, aspectRatio, modelGender, modelPersona, skinTone, clothingType, outfitChoice, outfitReferenceImage, stylePreset, poseSuggestion, onGenerate]);
+  }, [productImage, productDescription, aspectRatio, modelGender, modelPersona, skinTone, clothingType, outfitChoice, outfitReferenceImage, stylePreset, poseSuggestion, customPose, onGenerate]);
 
   return (
     <aside className="w-96 bg-white dark:bg-brand-secondary p-6 flex flex-col h-full shadow-lg overflow-y-auto">
@@ -88,6 +103,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
             )}
           </label>
           <input id="product-upload" type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => handleFileChange(e, setProductImage, setProductImagePreview)} />
+          <div className="mt-4">
+              <label htmlFor="product-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Description</label>
+              <textarea
+                  id="product-description"
+                  value={productDescription}
+                  onChange={(e) => setProductDescription(e.target.value)}
+                  placeholder="e.g., A stylish, eco-friendly water bottle with a bamboo lid."
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-accent focus:border-brand-accent text-sm"
+                  rows={3}
+              />
+          </div>
         </Section>
 
         <Section title="2. Setup Scene">
@@ -112,6 +138,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
            <Select label="Model Pose" value={poseSuggestion} onChange={(e) => setPoseSuggestion(e.target.value)} className="mt-4">
             {POSE_SUGGESTIONS.map(o => <option key={o} value={o}>{o}</option>)}
           </Select>
+          {poseSuggestion === CUSTOM_POSE_TRIGGER && (
+            <div className="mt-4">
+                <label htmlFor="custom-pose" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Custom Pose Description</label>
+                <textarea
+                    id="custom-pose"
+                    value={customPose}
+                    onChange={(e) => setCustomPose(e.target.value)}
+                    placeholder="e.g., Model laughing while looking over their shoulder, holding the product."
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-brand-accent focus:border-brand-accent text-sm"
+                    rows={3}
+                />
+            </div>
+          )}
         </Section>
 
         <Section title="4. Outfit Control">
@@ -143,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isLoading }) => {
       </div>
 
       <div className="mt-auto pt-6 border-t border-slate-200 dark:border-slate-700">
-        <Button onClick={handleSubmit} disabled={isLoading || !productImage} fullWidth>
+        <Button onClick={handleSubmit} disabled={isLoading || !productImage || !productDescription.trim()} fullWidth>
           {isLoading ? 'Generating...' : 'Generate Image'}
         </Button>
       </div>
